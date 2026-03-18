@@ -14,21 +14,24 @@
       font-family: 'JetBrains Mono', monospace;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 24px;
+      align-items: stretch;
+      justify-content: flex-start;
+      padding: 0;
+      margin: 0;
     }
 
     .browser-chrome {
-      width: 100%; max-width: 780px;
-      border-radius: 12px; overflow: hidden;
-      border: 1px solid #2a2520;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .titlebar {
       background: #1a1714; padding: 11px 16px;
       display: flex; align-items: center; gap: 8px;
       border-bottom: 1px solid #2a2520;
+      position: sticky; top: 0; z-index: 10;
     }
     .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
     .d1{background:#ff5f56;} .d2{background:#ffbd2e;} .d3{background:#27c93f;}
@@ -36,7 +39,7 @@
       margin: 0 auto; background: #0e0c0b;
       border: 1px solid #2a2520; border-radius: 5px;
       padding: 3px 14px; font-size: 11px; color: #4a4540;
-      letter-spacing: 0.04em; width: 280px; text-align: center;
+      letter-spacing: 0.04em; text-align: center; width: 320px;
     }
 
     .replay-btn {
