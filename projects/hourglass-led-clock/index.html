@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Max — Hourglass LED Clock</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0e0c0b;
+      min-height: 100vh;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .browser-chrome {
+      width: 100%; max-width: 780px;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid #2a2520;
+    }
+
+    .titlebar {
+      background: #1a1714; padding: 11px 16px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid #2a2520;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .d1{background:#ff5f56;} .d2{background:#ffbd2e;} .d3{background:#27c93f;}
+    .url-bar {
+      margin: 0 auto; background: #0e0c0b;
+      border: 1px solid #2a2520; border-radius: 5px;
+      padding: 3px 14px; font-size: 11px; color: #4a4540;
+      letter-spacing: 0.04em; width: 360px; text-align: center;
+    }
+
+    .term { background: #0e0c0b; padding: 40px 48px 52px; }
+
+    .breadcrumb { font-size: 11px; color: #3d3830; letter-spacing: 0.08em; margin-bottom: 20px; }
+    .breadcrumb span { color: #a07860; }
+    .breadcrumb a { color: #7a6e65; text-decoration: none; }
+    .breadcrumb a:hover { color: #f5c4a0; }
+
+    .proj-title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+    .proj-title { font-size: 22px; font-weight: 700; color: #f5c4a0; letter-spacing: -0.01em; }
+    .status-badge {
+      font-size: 10px; padding: 3px 10px; border-radius: 3px;
+      letter-spacing: 0.06em; background: #1a1714;
+      border: 1px solid #2d3828; color: #7a9a70;
+    }
+
+    .proj-tagline { font-size: 13px; color: #5a5048; margin-bottom: 28px; line-height: 1.6; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 32px; }
+    .tag {
+      background: #131110; border: 1px solid #2d2520; color: #a07860;
+      font-size: 10px; padding: 2px 9px; border-radius: 3px; letter-spacing: 0.04em;
+    }
+
+    .divider { border: none; border-top: 1px solid #1e1a17; margin-bottom: 28px; }
+
+    .section { margin-bottom: 32px; }
+
+    .section-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+    .ps { color: #f5c4a0; font-weight: 700; font-size: 12px; user-select: none; }
+    .section-cmd { color: #e8a882; font-size: 12px; }
+
+    .section-body { padding-left: 24px; font-size: 13px; color: #7a6e65; line-height: 1.85; }
+    .section-body p { margin-bottom: 10px; }
+    .section-body p:last-child { margin-bottom: 0; }
+    .hl { color: #c49a7a; } .hl2 { color: #f5c4a0; }
+
+    .challenge-list { padding-left: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .challenge {
+      border-left: 2px solid #2a2520; padding-left: 16px; transition: border-color 0.15s;
+    }
+    .challenge:hover { border-left-color: #f5c4a0; }
+    .challenge-title { font-size: 12px; color: #f5c4a0; margin-bottom: 5px; font-weight: 500; }
+    .challenge-body { font-size: 12px; color: #7a6e65; line-height: 1.8; }
+    .challenge-body .hl { color: #c49a7a; }
+
+    .image-placeholder { padding-left: 24px; }
+    .img-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .img-slot {
+      background: #131110; border: 1px dashed #2a2520; border-radius: 4px;
+      padding: 32px 20px; text-align: center;
+      font-size: 11px; color: #3d3830; letter-spacing: 0.06em;
+      margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .img-slot:hover { border-color: #a07860; color: #a07860; }
+    .img-slot-label { font-size: 10px; color: #3d3830; letter-spacing: 0.04em; }
+
+    .status-block { padding-left: 24px; }
+    .status-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 12px; }
+    .status-icon { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .done { background: #7a9a70; }
+    .active { background: #f5c4a0; animation: glow 2s ease-in-out infinite; }
+    .todo { background: #2a2520; }
+    @keyframes glow { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .status-text-done { color: #5a5048; }
+    .status-text-active { color: #c49a7a; }
+    .status-text-todo { color: #3d3830; }
+
+    .action-row { display: flex; gap: 10px; margin-top: 8px; }
+    .btn {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      padding: 8px 16px; border-radius: 3px; cursor: pointer;
+      letter-spacing: 0.04em; transition: all 0.15s;
+      border: 1px solid #3d3028; background: transparent; color: #f5c4a0;
+      text-decoration: none; display: inline-block;
+    }
+    .btn:hover { background: rgba(245,196,160,0.07); }
+    .btn.ghost { border-color: #2a2520; color: #4a4540; }
+    .btn.ghost:hover { background: #1a1714; color: #7a6e65; border-color: #3d3830; }
+
+    .footer-bar {
+      background: #0a0908; border-top: 1px solid #1a1714;
+      padding: 10px 48px; display: flex; gap: 20px; align-items: center;
+    }
+    .nav-item { font-size: 11px; color: #3d3830; letter-spacing: 0.06em; cursor: pointer; transition: color 0.15s; font-family: 'JetBrains Mono', monospace; text-decoration: none; display: inline-block; }
+    .nav-item:hover { color: #f5c4a0; }
+    .nav-item.active { color: #c49a7a; }
+    .nav-sep { color: #2a2520; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="browser-chrome">
+    <div class="titlebar">
+      <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+      <div class="url-bar">max.dev/projects/hourglass-led-clock</div>
+    </div>
+
+    <div class="term">
+      <div class="breadcrumb">
+        <a href="/">~/home</a> / <a href="/projects">projects</a> / <span>hourglass-led-clock</span>
+      </div>
+
+      <div class="proj-title-row">
+        <span class="proj-title">hourglass-led-clock</span>
+        <span class="status-badge">in progress</span>
+      </div>
+      <div class="proj-tagline">
+        A sand simulation hourglass clock — old concept, new hardware.<br>
+        Custom PCB · STM32U073 · dual LED matrices · battery powered.
+      </div>
+
+      <div class="tag-row">
+        <span class="tag">STM32U073</span>
+        <span class="tag">KiCad 9</span>
+        <span class="tag">IS31FL3733B</span>
+        <span class="tag">TPS61022</span>
+        <span class="tag">BQ24232</span>
+        <span class="tag">LP5912</span>
+        <span class="tag">USB CDC</span>
+        <span class="tag">I2C</span>
+        <span class="tag">IMU wake</span>
+        <span class="tag">JLCPCB</span>
+      </div>
+
+      <hr class="divider">
+
+      <div class="section">
+        <div class="section-header">
+          <span class="ps">~$</span>
+          <span class="section-cmd">cat overview.md</span>
+        </div>
+        <div class="section-body">
+          <p>
+            The hourglass clock reimagines a centuries-old timekeeping metaphor using a <span class="hl2">sand particle simulation</span> running on a microcontroller. Two circular <span class="hl">LED matrices</span> sit at the top and bottom of an hourglass form — sand pixels fall from the upper matrix to the lower one, and the rate of fall tracks real time.
+          </p>
+          <p>
+            The whole thing runs on a single custom PCB — my <span class="hl2">first PCB design</span> — built around the <span class="hl">STM32U073</span> for its low power profile and native USB support. It charges over USB-C, runs for hours on battery, and wakes from sleep when you pick it up.
+          </p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="ps">~$</span>
+          <span class="section-cmd">cat challenges.md</span>
+        </div>
+        <div class="challenge-list">
+          <div class="challenge">
+            <div class="challenge-title">display driver selection</div>
+            <div class="challenge-body">
+              Finding a driver IC that could handle a full circular LED matrix without excessive external components was harder than expected. After evaluating several options, the <span class="hl">IS31FL3733B</span> emerged as the right fit — it supports up to 144 LEDs per IC over I2C, handles PWM dimming in hardware, and two of them can be chained to drive both matrices independently.
+            </div>
+          </div>
+          <div class="challenge">
+            <div class="challenge-title">power architecture</div>
+            <div class="challenge-body">
+              Running LEDs, a microcontroller, and an IMU from a single LiPo cell required careful power sequencing. The solution uses a <span class="hl">TPS61022</span> boost converter to supply the LED matrices, an <span class="hl">LP5912</span> LDO for clean MCU power, and a <span class="hl">BQ24232</span> for USB-C battery charging — each stage isolated so the LEDs can't pull noise into the MCU rail.
+            </div>
+          </div>
+          <div class="challenge">
+            <div class="challenge-title">learning PCB design from scratch</div>
+            <div class="challenge-body">
+              This is my first custom PCB. Every decision — layer stackup, component placement, trace width, decoupling strategy — required research and iteration. Working in <span class="hl">KiCad 9</span> and targeting <span class="hl">JLCPCB</span> for fabrication added real constraints that pushed the design toward something manufacturable rather than just functional on paper.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="ps">~$</span>
+          <span class="section-cmd">ls ./images</span>
+        </div>
+        <div class="image-placeholder">
+          <div class="img-grid">
+            <div>
+              <div class="img-slot">+ add schematic screenshot</div>
+              <div class="img-slot-label">schematic / KiCad</div>
+            </div>
+            <div>
+              <div class="img-slot">+ add PCB layout render</div>
+              <div class="img-slot-label">PCB layout / 3D render</div>
+            </div>
+            <div>
+              <div class="img-slot">+ add sand sim demo</div>
+              <div class="img-slot-label">firmware / simulation</div>
+            </div>
+            <div>
+              <div class="img-slot">+ add assembled board</div>
+              <div class="img-slot-label">assembled hardware</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="ps">~$</span>
+          <span class="section-cmd">cat build-status.log</span>
+        </div>
+        <div class="status-block">
+          <div class="status-item">
+            <div class="status-icon done"></div>
+            <span class="status-text-done">sand simulation firmware complete</span>
+          </div>
+          <div class="status-item">
+            <div class="status-icon done"></div>
+            <span class="status-text-done">schematic complete</span>
+          </div>
+          <div class="status-item">
+            <div class="status-icon active"></div>
+            <span class="status-text-active">PCB layout — in progress</span>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo"></div>
+            <span class="status-text-todo">fabrication &amp; assembly</span>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo"></div>
+            <span class="status-text-todo">hardware bring-up &amp; testing</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="action-row">
+        <a href="#" class="btn">→ github</a>
+        <a href="/projects" class="btn ghost">← back_to_projects</a>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <a href="/" class="nav-item">~/home</a>
+      <span class="nav-sep">/</span>
+      <a href="/projects" class="nav-item active">~/projects</a>
+      <span class="nav-sep">/</span>
+      <a href="#" class="nav-item">~/about</a>
+      <span class="nav-sep">/</span>
+      <a href="#" class="nav-item">~/resume</a>
+      <span class="nav-sep">/</span>
+      <a href="#" class="nav-item">~/contact</a>
+    </div>
+  </div>
+</body>
+</html>
