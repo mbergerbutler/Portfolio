@@ -7,133 +7,366 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: #0e0c0b; font-family: 'JetBrains Mono', monospace; }
-    .browser-chrome { display: flex; flex-direction: column; height: 100vh; width: 100%; }
-    .titlebar { flex-shrink: 0; background: #1a1714; padding: 11px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #2a2520; }
-    .url-bar { flex: 1; text-align: center; font-size: 11px; color: #4a4540; letter-spacing: 0.04em; }
-    .replay-btn { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #3d3830; background: transparent; border: 1px solid #2a2520; padding: 3px 10px; border-radius: 3px; cursor: pointer; letter-spacing: 0.04em; transition: all 0.15s; flex-shrink: 0; }
-    .replay-btn:hover { color: #f5c4a0; border-color: #3d3028; }
-    .term { flex: 1; overflow-y: auto; padding: 44px 48px 52px; background: #0e0c0b; }
-    .footer-bar { flex-shrink: 0; background: #0a0908; border-top: 1px solid #1a1714; padding: 10px 48px; display: flex; gap: 20px; align-items: center; }
-    .hero-name { font-size: 13px; color: #4a4540; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
-    .hero-title { font-size: 32px; font-weight: 700; color: #f5c4a0; line-height: 1.15; margin-bottom: 4px; }
-    .hero-sub { font-size: 14px; color: #3d3830; margin-bottom: 36px; }
-    .divider { border: none; border-top: 1px solid #1e1a17; margin-bottom: 36px; }
-    .block { margin-bottom: 28px; opacity: 0; transition: opacity 0.2s; }
+    html, body { height: 100%; background: #0e0c0b; font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+
+    .shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+
+    .titlebar {
+      flex-shrink: 0; background: #1a1714; padding: 11px 20px;
+      display: flex; align-items: center;
+      border-bottom: 1px solid #2a2520;
+    }
+    .title-left { font-size: 11px; color: #4a4540; letter-spacing: 0.08em; }
+    .title-center { flex: 1; text-align: center; font-size: 11px; color: #3d3830; letter-spacing: 0.04em; }
+    .title-right { display: flex; gap: 12px; align-items: center; }
+
+    .nav-link { font-size: 11px; color: #3d3830; letter-spacing: 0.06em; text-decoration: none; transition: color 0.15s; }
+    .nav-link:hover { color: #f5c4a0; }
+    .nav-sep { color: #2a2520; font-size: 11px; }
+
+    .main { flex: 1; display: flex; overflow: hidden; }
+
+    /* Left: sim panel */
+    .sim-panel {
+      width: 460px; flex-shrink: 0;
+      border-right: 1px solid #2a2520;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #0b0a09;
+      padding: 24px 0;
+    }
+
+    .sim-label {
+      font-size: 10px; color: #3d3830; letter-spacing: 0.1em;
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+
+    canvas { display: block; image-rendering: pixelated; }
+
+    .sim-caption {
+      font-size: 10px; color: #3d3830; letter-spacing: 0.06em;
+      margin-top: 12px;
+    }
+    .sim-caption span { color: #a07860; }
+
+    /* Right: terminal panel */
+    .term-panel {
+      flex: 1; overflow-y: auto;
+      padding: 44px 48px 52px;
+      display: flex; flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero-name { font-size: 11px; color: #3d3830; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+    .hero-title { font-size: 36px; font-weight: 700; color: #f5c4a0; line-height: 1.1; margin-bottom: 6px; }
+    .hero-sub { font-size: 13px; color: #3d3830; margin-bottom: 40px; letter-spacing: 0.02em; }
+    .divider { border: none; border-top: 1px solid #1e1a17; margin-bottom: 32px; }
+
+    .block { margin-bottom: 26px; opacity: 0; transition: opacity 0.2s; }
     .block.visible { opacity: 1; }
-    .prompt-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+
+    .prompt-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
     .ps { color: #f5c4a0; font-weight: 700; font-size: 13px; user-select: none; }
     .cmd-text { color: #e8a882; font-size: 13px; }
-    .output { padding-left: 26px; font-size: 13px; line-height: 1.85; color: #7a6e65; min-height: 1.85em; }
+
+    .output { padding-left: 24px; font-size: 12px; line-height: 1.85; color: #7a6e65; }
     .hl { color: #f5c4a0; } .hl2 { color: #c49a7a; } .dim { color: #3d3830; }
-    .tag-row { padding-left: 26px; display: flex; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
-    .tag { background: #1a1714; border: 1px solid #2d2520; color: #a07860; font-size: 11px; padding: 3px 10px; border-radius: 3px; letter-spacing: 0.04em; opacity: 0; transform: translateY(4px); transition: opacity 0.15s, transform 0.15s; }
+
+    .tag-row { padding-left: 24px; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+    .tag {
+      background: #1a1714; border: 1px solid #2d2520; color: #a07860;
+      font-size: 10px; padding: 2px 9px; border-radius: 3px; letter-spacing: 0.04em;
+      opacity: 0; transform: translateY(3px); transition: opacity 0.15s, transform 0.15s;
+    }
     .tag.in { opacity: 1; transform: translateY(0); }
-    .status-row { padding-left: 26px; display: flex; align-items: center; gap: 10px; }
-    .pulse { width: 8px; height: 8px; border-radius: 50%; background: #f5c4a0; flex-shrink: 0; animation: glow 2s ease-in-out infinite; }
+
+    .status-row { padding-left: 24px; display: flex; align-items: center; gap: 10px; }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: #f5c4a0; flex-shrink: 0; animation: glow 2s ease-in-out infinite; }
     @keyframes glow { 0%,100%{opacity:1} 50%{opacity:0.25} }
-    .status-txt { font-size: 12px; color: #5a5048; }
+    .status-txt { font-size: 11px; color: #5a5048; }
     .status-txt span { color: #c49a7a; }
-    .cta-section { padding-left: 26px; display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
-    .btn { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 20px; border-radius: 4px; cursor: pointer; letter-spacing: 0.04em; transition: all 0.15s; border: 1px solid #3d3028; background: transparent; color: #f5c4a0; }
+
+    .cta-section { padding-left: 24px; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .btn {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 8px 18px;
+      border-radius: 3px; cursor: pointer; letter-spacing: 0.04em; transition: all 0.15s;
+      border: 1px solid #3d3028; background: transparent; color: #f5c4a0; text-decoration: none; display: inline-block;
+    }
     .btn:hover { background: rgba(245,196,160,0.07); border-color: #f5c4a0; }
     .btn.ghost { border-color: #2a2520; color: #4a4540; }
     .btn.ghost:hover { background: #1a1714; color: #7a6e65; border-color: #3d3830; }
-    .cursor { display: inline-block; width: 8px; height: 14px; background: #f5c4a0; vertical-align: middle; margin-left: 1px; animation: blink 1.1s step-end infinite; }
+
+    .cursor {
+      display: inline-block; width: 8px; height: 13px;
+      background: #f5c4a0; vertical-align: middle; margin-left: 1px;
+      animation: blink 1.1s step-end infinite;
+    }
     @keyframes blink { 50%{opacity:0} }
-    .nav-item { font-size: 11px; color: #3d3830; letter-spacing: 0.06em; cursor: pointer; transition: color 0.15s; font-family: 'JetBrains Mono', monospace; text-decoration: none; }
-    .nav-item:hover { color: #f5c4a0; }
-    .nav-item.active { color: #c49a7a; }
-    .nav-sep { color: #2a2520; font-size: 11px; }
+
+    .footer-bar {
+      flex-shrink: 0; background: #0a0908; border-top: 1px solid #1a1714;
+      padding: 9px 20px; display: flex; gap: 16px; align-items: center;
+    }
+    .footer-item { font-size: 10px; color: #2a2520; letter-spacing: 0.06em; }
+    .footer-item span { color: #3d3830; }
+    .footer-right { margin-left: auto; font-size: 10px; color: #2a2520; }
+    .footer-right span { color: #a07860; cursor: pointer; transition: color 0.15s; }
+    .footer-right span:hover { color: #f5c4a0; }
   </style>
 </head>
 <body>
-  <div class="browser-chrome">
-    <div class="titlebar">
-      <span class="url-bar">max.dev — portfolio</span>
-      <button class="replay-btn" id="replayBtn">↺ replay</button>
+<div class="shell">
+
+  <div class="titlebar">
+    <span class="title-left">max.dev</span>
+    <span class="title-center">embedded systems · robotics · controls</span>
+    <div class="title-right">
+      <a href="/projects" class="nav-link">~/projects</a>
+      <span class="nav-sep">/</span>
+      <a href="/about" class="nav-link">~/about</a>
+      <span class="nav-sep">/</span>
+      <a href="/resume" class="nav-link">~/resume</a>
+      <span class="nav-sep">/</span>
+      <a href="/contact" class="nav-link">~/contact</a>
     </div>
-    <div class="term">
+  </div>
+
+  <div class="main">
+
+    <div class="sim-panel">
+      <div class="sim-label">hourglass-led-clock · live sim</div>
+      <canvas id="sandCanvas"></canvas>
+      <div class="sim-caption">sand particles: <span id="sandCount">0</span> · <span id="simStatus">running</span></div>
+    </div>
+
+    <div class="term-panel">
       <div class="hero-name">portfolio / home</div>
       <div class="hero-title">Max</div>
-      <div class="hero-sub">embedded systems · robotics · controls</div>
+      <div class="hero-sub">automotive → robotics · building things that exist in the real world</div>
       <hr class="divider">
+
       <div class="block" id="b0">
         <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd0"></span><span class="cursor" id="cur0"></span></div>
         <div class="output" id="out0"></div>
       </div>
+
       <div class="block" id="b1">
         <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd1"></span><span class="cursor" id="cur1"></span></div>
         <div class="tag-row" id="out1"></div>
       </div>
+
       <div class="block" id="b2">
         <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd2"></span><span class="cursor" id="cur2"></span></div>
         <div class="output" id="out2"></div>
       </div>
+
       <div class="block" id="b3">
         <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd3"></span><span class="cursor" id="cur3"></span></div>
         <div class="cta-section" id="out3"></div>
       </div>
     </div>
-    <div class="footer-bar">
-      <span class="nav-item active">~/home</span>
-      <span class="nav-sep">/</span><a href="/projects" class="nav-item">~/projects</a>
-      <span class="nav-sep">/</span><a href="/about" class="nav-item">~/about</a>
-      <span class="nav-sep">/</span><a href="/resume" class="nav-item">~/resume</a>
-      <span class="nav-sep">/</span><a href="/contact" class="nav-item">~/contact</a>
-    </div>
+
   </div>
-  <script>
-    const CHAR_DELAY = 38, LINE_DELAY = 320, BLOCK_GAP = 520;
-    function typeText(el, text, speed) {
-      return new Promise(resolve => {
-        let i = 0; el.textContent = '';
-        const t = setInterval(() => { el.textContent += text[i++]; if (i >= text.length) { clearInterval(t); resolve(); } }, speed);
-      });
-    }
-    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
-    function showBlock(id) { const el = document.getElementById(id); if (el) el.classList.add('visible'); }
-    function hideCursor(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
-    async function runSequence() {
-      ['b0','b1','b2','b3'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('visible'); });
-      ['cmd0','cmd1','cmd2','cmd3'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; });
-      ['out0','out1','out2','out3'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
-      ['cur0','cur1','cur2','cur3'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'inline-block'; });
-      await wait(400);
-      showBlock('b0');
-      await typeText(document.getElementById('cmd0'), 'whoami', CHAR_DELAY);
-      await wait(LINE_DELAY); hideCursor('cur0');
-      const out0 = document.getElementById('out0');
-      for (const html of [
-        'Engineer with <span class="hl">5+ years</span> in automotive systems, pivoting into <span class="hl">robotics</span> and <span class="hl">embedded controls</span>.',
-        'Currently in grad school — building with <span class="hl2">STM32</span>, <span class="hl2">KiCad</span>, and <span class="hl2">ROS2</span>.',
-        '<span class="dim">Hardware nerd. PCB designer. Firmware tinkerer.</span>'
-      ]) {
-        const p = document.createElement('div'); p.innerHTML = html; p.style.opacity = '0'; p.style.transition = 'opacity 0.3s';
-        out0.appendChild(p); await wait(30); p.style.opacity = '1'; await wait(260);
+
+  <div class="footer-bar">
+    <span class="footer-item">status: <span>online</span></span>
+    <span class="footer-item">host: <span>cloudflare pages</span></span>
+    <span class="footer-right"><span id="replayBtn">↺ replay intro</span></span>
+  </div>
+
+</div>
+
+<script>
+// ── Sand Simulation ──────────────────────────────────────────────
+const COLS = 31, ROWS = 55, CELL = 12;
+const canvas = document.getElementById('sandCanvas');
+canvas.width  = COLS * CELL;
+canvas.height = ROWS * CELL;
+const ctx = canvas.getContext('2d');
+
+const EMPTY = 0, WALL = 1, SAND = 2;
+const COL_BG   = '#0b0a09';
+const COL_WALL = '#7a5a40';
+const COL_SAND = '#f5c4a0';
+const COL_DOT  = '#1e1a17';
+
+function buildHourglass() {
+  const g = Array.from({length: ROWS}, () => new Array(COLS).fill(0));
+  const cx = Math.floor(COLS / 2);
+  const topRows = 24, neckRows = 3;
+  for (let r = 0; r < topRows; r++) {
+    const t = r / (topRows - 1);
+    const rad = Math.round(13 * (1 - t) + 1 * t);
+    for (let c = cx - rad; c <= cx + rad; c++) if (c >= 0 && c < COLS) g[r][c] = 1;
+  }
+  for (let r = topRows; r < topRows + neckRows; r++)
+    for (let c = cx - 1; c <= cx + 1; c++) g[r][c] = 1;
+  const botStart = topRows + neckRows;
+  const botRows = ROWS - botStart;
+  for (let r = 0; r < botRows; r++) {
+    const t = r / (botRows - 1);
+    const rad = Math.round(1 * (1 - t) + 13 * t);
+    for (let c = cx - rad; c <= cx + rad; c++) if (c >= 0 && c < COLS) g[botStart + r][c] = 1;
+  }
+  return g;
+}
+
+function buildWalls(hg) {
+  const w = Array.from({length: ROWS}, () => new Array(COLS).fill(false));
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      if (!hg[r][c]) continue;
+      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+        const nr = r+dr, nc = c+dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || !hg[nr][nc]) { w[r][c] = true; break; }
       }
-      await wait(BLOCK_GAP);
-      showBlock('b1');
-      await typeText(document.getElementById('cmd1'), 'ls ./skills', CHAR_DELAY);
-      await wait(LINE_DELAY); hideCursor('cur1');
-      const tagRow = document.getElementById('out1');
-      for (const tag of ['STM32','KiCad 9','ROS2','Python','PCB design','firmware','I2C / SPI','USB CDC','power systems','boost converter','JLCPCB']) {
-        const t = document.createElement('span'); t.className = 'tag'; t.textContent = tag;
-        tagRow.appendChild(t); await wait(10); t.classList.add('in'); await wait(55);
-      }
-      await wait(BLOCK_GAP);
-      showBlock('b2');
-      await typeText(document.getElementById('cmd2'), 'cat status.log', CHAR_DELAY);
-      await wait(LINE_DELAY); hideCursor('cur2');
-      document.getElementById('out2').innerHTML = '<div class="status-row"><div class="pulse"></div><span class="status-txt"><span>actively looking</span> · open to embedded · robotics · controls roles</span></div>';
-      await wait(BLOCK_GAP);
-      showBlock('b3');
-      await typeText(document.getElementById('cmd3'), './start', CHAR_DELAY);
-      await wait(LINE_DELAY);
-      document.getElementById('out3').innerHTML = `<a href="/projects"><button class="btn">→ view_projects</button></a><a href="/about"><button class="btn ghost">→ about_me</button></a><a href="/resume"><button class="btn ghost">→ resume.pdf</button></a>`;
     }
-    document.getElementById('replayBtn').addEventListener('click', runSequence);
-    runSequence();
-  </script>
+  return w;
+}
+
+const hg   = buildHourglass();
+const walls = buildWalls(hg);
+const cells = Array.from({length: ROWS}, () => new Uint8Array(COLS));
+
+function fillTop() {
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) cells[r][c] = EMPTY;
+  for (let r = 1; r < 23; r++)
+    for (let c = 0; c < COLS; c++)
+      if (hg[r][c] && !walls[r][c]) cells[r][c] = SAND;
+}
+fillTop();
+
+function countSand() {
+  let n = 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (cells[r][c] === SAND) n++;
+  return n;
+}
+
+function stepSand() {
+  for (let r = ROWS - 2; r >= 0; r--) {
+    const order = Array.from({length: COLS}, (_,i) => i).sort(() => Math.random() - 0.5);
+    for (const c of order) {
+      if (cells[r][c] !== SAND || walls[r][c]) continue;
+      if (r+1 < ROWS && hg[r+1][c] && !walls[r+1][c] && cells[r+1][c] === EMPTY) {
+        cells[r+1][c] = SAND; cells[r][c] = EMPTY; continue;
+      }
+      const dirs = Math.random() < 0.5 ? [-1,1] : [1,-1];
+      for (const dc of dirs) {
+        const nc = c+dc;
+        if (nc >= 0 && nc < COLS && r+1 < ROWS && hg[r+1][nc] && !walls[r+1][nc] && cells[r+1][nc] === EMPTY) {
+          cells[r+1][nc] = SAND; cells[r][c] = EMPTY; break;
+        }
+      }
+    }
+  }
+}
+
+let flipCooldown = 0, simStatus = 'running';
+function checkFlip() {
+  if (flipCooldown > 0) { flipCooldown--; return; }
+  let topSand = 0;
+  for (let r = 0; r < 24; r++) for (let c = 0; c < COLS; c++) if (cells[r][c] === SAND) topSand++;
+  if (topSand === 0) {
+    simStatus = 'flipping';
+    flipCooldown = 80;
+    fillTop();
+    setTimeout(() => { simStatus = 'running'; }, 1500);
+  }
+}
+
+function drawSim() {
+  ctx.fillStyle = COL_BG;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = `${CELL}px "JetBrains Mono", monospace`;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (!hg[r][c]) continue;
+      const x = c * CELL, y = r * CELL + CELL - 2;
+      if (walls[r][c]) { ctx.fillStyle = COL_WALL; ctx.fillText('#', x, y); }
+      else if (cells[r][c] === SAND) { ctx.fillStyle = COL_SAND; ctx.fillText('*', x, y); }
+      else { ctx.fillStyle = COL_DOT; ctx.fillText('.', x, y); }
+    }
+  }
+}
+
+let frameCount = 0;
+function simLoop() {
+  if (frameCount % 2 === 0) { stepSand(); checkFlip(); }
+  drawSim();
+  document.getElementById('sandCount').textContent = countSand();
+  document.getElementById('simStatus').textContent = simStatus;
+  frameCount++;
+  requestAnimationFrame(simLoop);
+}
+
+// ── Typewriter Intro ─────────────────────────────────────────────
+const CHAR_DELAY = 38, LINE_DELAY = 300, BLOCK_GAP = 480;
+
+function typeText(el, text) {
+  return new Promise(resolve => {
+    let i = 0; el.textContent = '';
+    const t = setInterval(() => { el.textContent += text[i++]; if (i >= text.length) { clearInterval(t); resolve(); } }, CHAR_DELAY);
+  });
+}
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+function showBlock(id) { const el = document.getElementById(id); if (el) el.classList.add('visible'); }
+function hideCursor(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+
+async function runSequence() {
+  ['b0','b1','b2','b3'].forEach(id => { document.getElementById(id)?.classList.remove('visible'); });
+  ['cmd0','cmd1','cmd2','cmd3'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = ''; });
+  ['out0','out1','out2','out3'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = ''; });
+  ['cur0','cur1','cur2','cur3'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'inline-block'; });
+
+  await wait(600);
+
+  showBlock('b0');
+  await typeText(document.getElementById('cmd0'), 'whoami');
+  await wait(LINE_DELAY); hideCursor('cur0');
+  const out0 = document.getElementById('out0');
+  for (const html of [
+    'Engineer with <span class="hl">5+ years</span> in automotive, pivoting into <span class="hl">robotics</span> and <span class="hl">embedded controls</span>.',
+    'Grad school + side projects — <span class="hl2">STM32</span>, <span class="hl2">KiCad</span>, <span class="hl2">ROS2</span>, <span class="hl2">Python</span>.',
+    '<span class="dim">The hourglass clock to your left is my current build.</span>'
+  ]) {
+    const p = document.createElement('div'); p.innerHTML = html;
+    p.style.cssText = 'opacity:0;transition:opacity 0.3s;'; out0.appendChild(p);
+    await wait(20); p.style.opacity = '1'; await wait(240);
+  }
+
+  await wait(BLOCK_GAP);
+  showBlock('b1');
+  await typeText(document.getElementById('cmd1'), 'ls ./skills');
+  await wait(LINE_DELAY); hideCursor('cur1');
+  const tagRow = document.getElementById('out1');
+  for (const tag of ['STM32','KiCad 9','ROS2','Python','PCB design','firmware','I2C / SPI','USB CDC','power systems','JLCPCB']) {
+    const t = document.createElement('span'); t.className = 'tag'; t.textContent = tag;
+    tagRow.appendChild(t); await wait(10); t.classList.add('in'); await wait(50);
+  }
+
+  await wait(BLOCK_GAP);
+  showBlock('b2');
+  await typeText(document.getElementById('cmd2'), 'cat status.log');
+  await wait(LINE_DELAY); hideCursor('cur2');
+  document.getElementById('out2').innerHTML = '<div class="status-row"><div class="pulse"></div><span class="status-txt"><span>actively looking</span> · embedded · robotics · controls roles</span></div>';
+
+  await wait(BLOCK_GAP);
+  showBlock('b3');
+  await typeText(document.getElementById('cmd3'), './start');
+  await wait(LINE_DELAY);
+  document.getElementById('out3').innerHTML = `
+    <a href="/projects" class="btn">→ view_projects</a>
+    <a href="/about" class="btn ghost">→ about_me</a>
+    <a href="/resume" class="btn ghost">→ resume.pdf</a>`;
+}
+
+document.getElementById('replayBtn').addEventListener('click', runSequence);
+
+// Start everything once font loads
+document.fonts.load('12px "JetBrains Mono"').then(() => {
+  simLoop();
+  runSequence();
+}).catch(() => { simLoop(); runSequence(); });
+</script>
 </body>
 </html>

@@ -198,13 +198,24 @@
               <div class="img-slot-label">PCB layout / 3D render</div>
             </div>
             <div>
-              <div class="img-slot">+ add sand sim demo</div>
-              <div class="img-slot-label">firmware / simulation</div>
-            </div>
-            <div>
               <div class="img-slot">+ add assembled board</div>
               <div class="img-slot-label">assembled hardware</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="ps">~$</span>
+          <span class="section-cmd">./sand_sim</span>
+        </div>
+        <div style="padding-left: 24px;">
+          <div style="font-size: 11px; color: #3d3830; margin-bottom: 10px; letter-spacing: 0.04em;">particles: <span id="simCnt" style="color:#a07860;">0</span></div>
+          <canvas id="simCanvas"></canvas>
+          <div style="margin-top: 10px; display: flex; gap: 10px;">
+            <button id="simReset" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 14px;border-radius:3px;cursor:pointer;background:transparent;border:1px solid #3d3028;color:#f5c4a0;letter-spacing:0.04em;transition:all 0.15s;">↺ reset</button>
+            <button id="simPause" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 14px;border-radius:3px;cursor:pointer;background:transparent;border:1px solid #2a2520;color:#4a4540;letter-spacing:0.04em;transition:all 0.15s;">⏸ pause</button>
           </div>
         </div>
       </div>
@@ -258,5 +269,134 @@
       <a href="#" class="nav-item">~/contact</a>
     </div>
   </div>
+  <script>
+    const HIGHT = 31, WIDTH = 17, CELL = 14;
+    const CENTER_I = 15, CENTER_J = 8;
+    const DELAY_FRAMES = 4, FPS = 5;
+    const INTERVAL = 1000 / FPS;
+    const WALL = 2, SAND = 1, EMPTY = 0;
+
+    const START_GRID = [
+    [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0],
+    [0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],
+    [2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],
+    [0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+    [0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0],
+    [0,0,0,0,2,2,0,0,0,0,0,2,2,0,0,0,0],
+    [0,0,0,0,0,2,2,0,0,0,2,2,0,0,0,0,0],
+    [0,0,0,0,0,0,2,2,0,2,2,0,0,0,0,0,0],
+    [0,0,0,0,0,2,2,1,1,1,2,2,0,0,0,0,0],
+    [0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0],
+    [0,0,0,2,2,1,1,1,1,1,1,1,2,2,0,0,0],
+    [0,0,2,2,1,1,1,1,1,1,1,1,1,2,2,0,0],
+    [0,2,2,1,1,1,1,1,1,1,1,1,1,1,2,2,0],
+    [2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2],
+    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],
+    [0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+    [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0]
+    ];
+
+    const simCanvas = document.getElementById('simCanvas');
+    simCanvas.width  = WIDTH * CELL;
+    simCanvas.height = HIGHT * CELL;
+    const sctx = simCanvas.getContext('2d');
+
+    let sgrid, centerWasOccupied, centerFrameCount;
+
+    function resetSim() {
+      sgrid = START_GRID.map(r => [...r]);
+      centerWasOccupied = false;
+      centerFrameCount = 0;
+    }
+    resetSim();
+
+    function stepSand(g) {
+      const moved = Array.from({length: HIGHT}, () => new Uint8Array(WIDTH));
+      for (let i = 1; i < HIGHT; i++) {
+        const order = Array.from({length: WIDTH}, (_, k) => k).sort(() => Math.random() - 0.5);
+        for (const j of order) {
+          if (g[i][j] !== SAND || moved[i][j]) continue;
+          if (i === CENTER_I && j === CENTER_J) {
+            if (!centerWasOccupied) { centerWasOccupied = true; centerFrameCount = 0; continue; }
+            centerFrameCount++;
+            if (centerFrameCount < DELAY_FRAMES) continue;
+            centerFrameCount = 0; centerWasOccupied = false;
+          }
+          const ni = i - 1;
+          if (g[ni][j] === EMPTY) { g[ni][j] = SAND; g[i][j] = EMPTY; moved[ni][j] = 1; continue; }
+          const dirs = Math.random() < 0.5 ? [-1,1] : [1,-1];
+          for (const dj of dirs) {
+            const nj = j + dj;
+            if (nj >= 0 && nj < WIDTH && g[ni][nj] === EMPTY) { g[ni][nj] = SAND; g[i][j] = EMPTY; moved[ni][nj] = 1; break; }
+          }
+        }
+      }
+      if (g[CENTER_I][CENTER_J] === EMPTY) centerWasOccupied = false;
+    }
+
+    function countSand(g) {
+      let n = 0;
+      for (let i = 0; i < HIGHT; i++) for (let j = 0; j < WIDTH; j++) if (g[i][j] === SAND) n++;
+      return n;
+    }
+
+    function drawSim(g) {
+      sctx.fillStyle = '#0e0c0b';
+      sctx.fillRect(0, 0, simCanvas.width, simCanvas.height);
+      sctx.font = `bold ${CELL}px "JetBrains Mono", monospace`;
+      for (let i = 0; i < HIGHT; i++) {
+        for (let j = 0; j < WIDTH; j++) {
+          const v = g[i][j];
+          if (v === EMPTY) continue;
+          const x = j * CELL;
+          const y = (HIGHT - 1 - i) * CELL + CELL - 2;
+          if (v === WALL)      { sctx.fillStyle = '#7a5a40'; sctx.fillText('#', x, y); }
+          else if (v === SAND) { sctx.fillStyle = '#f5c4a0'; sctx.fillText('*', x, y); }
+        }
+      }
+    }
+
+    let simPaused = false, simLastTime = 0;
+
+    function simLoop(ts) {
+      requestAnimationFrame(simLoop);
+      if (simPaused) return;
+      if (ts - simLastTime < INTERVAL) return;
+      simLastTime = ts;
+      stepSand(sgrid);
+      drawSim(sgrid);
+      document.getElementById('simCnt').textContent = countSand(sgrid);
+    }
+
+    document.getElementById('simReset').addEventListener('click', () => {
+      resetSim(); drawSim(sgrid);
+      document.getElementById('simCnt').textContent = countSand(sgrid);
+    });
+
+    document.getElementById('simPause').addEventListener('click', function() {
+      simPaused = !simPaused;
+      this.textContent = simPaused ? '▶ resume' : '⏸ pause';
+    });
+
+    document.fonts.load(`bold ${CELL}px "JetBrains Mono"`).then(() => {
+      drawSim(sgrid); requestAnimationFrame(simLoop);
+    }).catch(() => {
+      drawSim(sgrid); requestAnimationFrame(simLoop);
+    });
+  </script>
 </body>
 </html>
