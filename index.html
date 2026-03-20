@@ -133,12 +133,6 @@
 
   <div class="main">
 
-    <div class="sim-panel">
-      <div class="sim-label">hourglass-led-clock · live sim</div>
-      <canvas id="sandCanvas"></canvas>
-      <div class="sim-caption">sand particles: <span id="sandCount">0</span> · <span id="simStatus">running</span></div>
-    </div>
-
     <div class="term-panel">
       <div class="hero-name">portfolio / home</div>
       <div class="hero-title">Max</div>
@@ -177,128 +171,6 @@
 </div>
 
 <script>
-// ── Sand Simulation ──────────────────────────────────────────────
-const COLS = 31, ROWS = 55, CELL = 12;
-const canvas = document.getElementById('sandCanvas');
-canvas.width  = COLS * CELL;
-canvas.height = ROWS * CELL;
-const ctx = canvas.getContext('2d');
-
-const EMPTY = 0, WALL = 1, SAND = 2;
-const COL_BG   = '#0b0a09';
-const COL_WALL = '#7a5a40';
-const COL_SAND = '#f5c4a0';
-const COL_DOT  = '#1e1a17';
-
-function buildHourglass() {
-  const g = Array.from({length: ROWS}, () => new Array(COLS).fill(0));
-  const cx = Math.floor(COLS / 2);
-  const topRows = 24, neckRows = 3;
-  for (let r = 0; r < topRows; r++) {
-    const t = r / (topRows - 1);
-    const rad = Math.round(13 * (1 - t) + 1 * t);
-    for (let c = cx - rad; c <= cx + rad; c++) if (c >= 0 && c < COLS) g[r][c] = 1;
-  }
-  for (let r = topRows; r < topRows + neckRows; r++)
-    for (let c = cx - 1; c <= cx + 1; c++) g[r][c] = 1;
-  const botStart = topRows + neckRows;
-  const botRows = ROWS - botStart;
-  for (let r = 0; r < botRows; r++) {
-    const t = r / (botRows - 1);
-    const rad = Math.round(1 * (1 - t) + 13 * t);
-    for (let c = cx - rad; c <= cx + rad; c++) if (c >= 0 && c < COLS) g[botStart + r][c] = 1;
-  }
-  return g;
-}
-
-function buildWalls(hg) {
-  const w = Array.from({length: ROWS}, () => new Array(COLS).fill(false));
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++) {
-      if (!hg[r][c]) continue;
-      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
-        const nr = r+dr, nc = c+dc;
-        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || !hg[nr][nc]) { w[r][c] = true; break; }
-      }
-    }
-  return w;
-}
-
-const hg   = buildHourglass();
-const walls = buildWalls(hg);
-const cells = Array.from({length: ROWS}, () => new Uint8Array(COLS));
-
-function fillTop() {
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) cells[r][c] = EMPTY;
-  for (let r = 1; r < 23; r++)
-    for (let c = 0; c < COLS; c++)
-      if (hg[r][c] && !walls[r][c]) cells[r][c] = SAND;
-}
-fillTop();
-
-function countSand() {
-  let n = 0;
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (cells[r][c] === SAND) n++;
-  return n;
-}
-
-function stepSand() {
-  for (let r = ROWS - 2; r >= 0; r--) {
-    const order = Array.from({length: COLS}, (_,i) => i).sort(() => Math.random() - 0.5);
-    for (const c of order) {
-      if (cells[r][c] !== SAND || walls[r][c]) continue;
-      if (r+1 < ROWS && hg[r+1][c] && !walls[r+1][c] && cells[r+1][c] === EMPTY) {
-        cells[r+1][c] = SAND; cells[r][c] = EMPTY; continue;
-      }
-      const dirs = Math.random() < 0.5 ? [-1,1] : [1,-1];
-      for (const dc of dirs) {
-        const nc = c+dc;
-        if (nc >= 0 && nc < COLS && r+1 < ROWS && hg[r+1][nc] && !walls[r+1][nc] && cells[r+1][nc] === EMPTY) {
-          cells[r+1][nc] = SAND; cells[r][c] = EMPTY; break;
-        }
-      }
-    }
-  }
-}
-
-let flipCooldown = 0, simStatus = 'running';
-function checkFlip() {
-  if (flipCooldown > 0) { flipCooldown--; return; }
-  let topSand = 0;
-  for (let r = 0; r < 24; r++) for (let c = 0; c < COLS; c++) if (cells[r][c] === SAND) topSand++;
-  if (topSand === 0) {
-    simStatus = 'flipping';
-    flipCooldown = 80;
-    fillTop();
-    setTimeout(() => { simStatus = 'running'; }, 1500);
-  }
-}
-
-function drawSim() {
-  ctx.fillStyle = COL_BG;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = `${CELL}px "JetBrains Mono", monospace`;
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (!hg[r][c]) continue;
-      const x = c * CELL, y = r * CELL + CELL - 2;
-      if (walls[r][c]) { ctx.fillStyle = COL_WALL; ctx.fillText('#', x, y); }
-      else if (cells[r][c] === SAND) { ctx.fillStyle = COL_SAND; ctx.fillText('*', x, y); }
-      else { ctx.fillStyle = COL_DOT; ctx.fillText('.', x, y); }
-    }
-  }
-}
-
-let frameCount = 0;
-function simLoop() {
-  if (frameCount % 2 === 0) { stepSand(); checkFlip(); }
-  drawSim();
-  document.getElementById('sandCount').textContent = countSand();
-  document.getElementById('simStatus').textContent = simStatus;
-  frameCount++;
-  requestAnimationFrame(simLoop);
-}
-
 // ── Typewriter Intro ─────────────────────────────────────────────
 const CHAR_DELAY = 38, LINE_DELAY = 300, BLOCK_GAP = 480;
 
@@ -364,9 +236,8 @@ document.getElementById('replayBtn').addEventListener('click', runSequence);
 
 // Start everything once font loads
 document.fonts.load('12px "JetBrains Mono"').then(() => {
-  simLoop();
   runSequence();
-}).catch(() => { simLoop(); runSequence(); });
+}).catch(() => {runSequence(); });
 </script>
 </body>
 </html>
