@@ -71,45 +71,64 @@ const p = project.data;
   .content :global(ul) { padding-left: 24px; list-style: none; margin-bottom: 16px; }
   .content :global(li) { font-size: 12px; color: #7a6e65; line-height: 1.8; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .content :global(li::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #2a2520; }
+  .content :global(li::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #2a2520; }
+  .content :global(li[data-state="done"]::before) { background: #7a9a70; }
+  .content :global(li[data-state="active"]::before) { background: #f5c4a0; animation: glow 2s ease-in-out infinite; }
+  @keyframes glow { 0%,100%{opacity:1} 50%{opacity:0.3} }
 </style>
 
-<script lang="ts">
-  const HIGHT = 31, WIDTH = 17, CELL = 14;
-  const CENTER_I = 15, CENTER_J = 8, DELAY_FRAMES = 4, FPS = 5;
-  const INTERVAL = 1000 / FPS, WALL = 2, SAND = 1, EMPTY = 0;
-
-  const START_GRID = [
-    [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
-    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
-    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
-    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
-    [0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0],[0,0,0,0,2,2,0,0,0,0,0,2,2,0,0,0,0],
-    [0,0,0,0,0,2,2,0,0,0,2,2,0,0,0,0,0],[0,0,0,0,0,0,2,2,0,2,2,0,0,0,0,0,0],
-    [0,0,0,0,0,2,2,1,1,1,2,2,0,0,0,0,0],[0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0],
-    [0,0,0,2,2,1,1,1,1,1,1,1,2,2,0,0,0],[0,0,2,2,1,1,1,1,1,1,1,1,1,2,2,0,0],
-    [0,2,2,1,1,1,1,1,1,1,1,1,1,1,2,2,0],[2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2],
-    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
-    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
-    [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0]
-  ];
-
+<script>
   document.addEventListener('DOMContentLoaded', () => {
-    const sc = document.getElementById('simCanvas') as HTMLCanvasElement | null;
+
+    document.querySelectorAll('.content li').forEach(li => {
+      const text = li.textContent || '';
+      if (text.startsWith('done:')) {
+        li.setAttribute('data-state', 'done');
+        li.textContent = text.replace('done: ', '');
+      } else if (text.startsWith('active:')) {
+        li.setAttribute('data-state', 'active');
+        li.textContent = text.replace('active: ', '');
+      } else if (text.startsWith('todo:')) {
+        li.setAttribute('data-state', 'todo');
+        li.textContent = text.replace('todo: ', '');
+      }
+    });
+
+    const sc = document.getElementById('simCanvas');
     if (!sc) return;
+
+    const HIGHT = 31, WIDTH = 17, CELL = 14;
+    const CENTER_I = 15, CENTER_J = 8, DELAY_FRAMES = 4, FPS = 5;
+    const INTERVAL = 1000 / FPS, WALL = 2, SAND = 1, EMPTY = 0;
+
+    const START_GRID = [
+      [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+      [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+      [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+      [0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0],[0,0,0,0,2,2,0,0,0,0,0,2,2,0,0,0,0],
+      [0,0,0,0,0,2,2,0,0,0,2,2,0,0,0,0,0],[0,0,0,0,0,0,2,2,0,2,2,0,0,0,0,0,0],
+      [0,0,0,0,0,2,2,1,1,1,2,2,0,0,0,0,0],[0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0],
+      [0,0,0,2,2,1,1,1,1,1,1,1,2,2,0,0,0],[0,0,2,2,1,1,1,1,1,1,1,1,1,2,2,0,0],
+      [0,2,2,1,1,1,1,1,1,1,1,1,1,1,2,2,0],[2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2],
+      [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+      [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+      [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+      [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0]
+    ];
 
     sc.width = WIDTH * CELL;
     sc.height = HIGHT * CELL;
-    const sctx = sc.getContext('2d')!;
-    let sgrid: number[][], cwOcc: boolean, cfCount: number;
+    const sctx = sc.getContext('2d');
+    let sgrid, cwOcc, cfCount;
 
     function resetSim() { sgrid = START_GRID.map(r => [...r]); cwOcc = false; cfCount = 0; }
     resetSim();
 
-    function stepSand(g: number[][]) {
+    function stepSand(g) {
       const moved = Array.from({length: HIGHT}, () => new Uint8Array(WIDTH));
       for (let i = 1; i < HIGHT; i++) {
         const order = Array.from({length: WIDTH}, (_, k) => k).sort(() => Math.random() - 0.5);
@@ -131,15 +150,15 @@ const p = project.data;
       if (g[CENTER_I][CENTER_J] === EMPTY) cwOcc = false;
     }
 
-    function countSand(g: number[][]) {
+    function countSand(g) {
       let n = 0;
       for (let i = 0; i < HIGHT; i++) for (let j = 0; j < WIDTH; j++) if (g[i][j] === SAND) n++;
       return n;
     }
 
-    function drawSim(g: number[][]) {
+    function drawSim(g) {
       sctx.fillStyle = '#0e0c0b';
-      sctx.fillRect(0, 0, sc!.width, sc!.height);
+      sctx.fillRect(0, 0, sc.width, sc.height);
       sctx.font = `bold ${CELL}px "JetBrains Mono", monospace`;
       for (let i = 0; i < HIGHT; i++) {
         for (let j = 0; j < WIDTH; j++) {
@@ -153,7 +172,8 @@ const p = project.data;
     }
 
     let simPaused = false, simLast = 0;
-    function simLoop(ts: number) {
+
+    function simLoop(ts) {
       requestAnimationFrame(simLoop);
       if (simPaused) return;
       if (ts - simLast < INTERVAL) return;
@@ -172,7 +192,7 @@ const p = project.data;
 
     document.getElementById('simPause')?.addEventListener('click', function() {
       simPaused = !simPaused;
-      (this as HTMLButtonElement).textContent = simPaused ? '▶ resume' : '⏸ pause';
+      this.textContent = simPaused ? '▶ resume' : '⏸ pause';
     });
 
     document.fonts.load(`bold ${CELL}px "JetBrains Mono"`).then(() => {
