@@ -34,7 +34,7 @@ const projects = await getCollection('projects');
             ))}
           </div>
           <div class="detail-actions">
-            <a href={`/projects/${project.slug}`} class="detail-btn">→ view_project</a>
+            <a href={`/projects/${project.id}`} class="detail-btn">→ view_project</a>
             <a href={project.data.github} class="detail-btn ghost">→ github</a>
           </div>
         </div>
