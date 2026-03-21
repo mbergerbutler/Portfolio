@@ -94,12 +94,10 @@ const { commands } = Astro.props;
     }
   }
 
-  document.addEventListener('DOMContentLoaded', runSequence);
+  document.addEventListener('DOMContentLoaded', runSequence, { once: true});
 </script>
 
 <style>
-  .block { margin-bottom: 26px; opacity: 0; transition: opacity 0.2s; }
-  .block.visible { opacity: 1; }
   .tag-row { padding-left: 24px; }
   .cta-section { padding-left: 24px; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 </style>

@@ -136,3 +136,7 @@ html, body { height: 100%; background: #0e0c0b; font-family: 'JetBrains Mono', m
 .sim-controls button:first-child:hover { background: rgba(245,196,160,0.07); }
 .sim-controls button:last-child { border: 1px solid #2a2520; color: #4a4540; }
 .sim-controls button:last-child:hover { background: #1a1714; color: #7a6e65; }
+
+/* Text Blocks */
+.block { margin-bottom: 26px; opacity: 0; transition: opacity 0.2s; }
+.block.visible { opacity: 1; }
