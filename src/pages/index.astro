@@ -1,0 +1,106 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Portfolio" path="/">
+  <div class="hero-name">portfolio / home</div>
+  <div class="hero-title">Max</div>
+  <div class="hero-sub">automotive → robotics · building things that exist in the real world</div>
+  <hr class="divider">
+
+  <div class="block" id="b0">
+    <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd0"></span><span class="cursor" id="cur0"></span></div>
+    <div class="output" id="out0"></div>
+  </div>
+
+  <div class="block" id="b1">
+    <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd1"></span><span class="cursor" id="cur1"></span></div>
+    <div class="tag-row" id="out1"></div>
+  </div>
+
+  <div class="block" id="b2">
+    <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd2"></span><span class="cursor" id="cur2"></span></div>
+    <div class="output" id="out2"></div>
+  </div>
+
+  <div class="block" id="b3">
+    <div class="prompt-line"><span class="ps">~$</span><span class="cmd-text" id="cmd3"></span><span class="cursor" id="cur3"></span></div>
+    <div class="cta-section" id="out3"></div>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero-name { font-size: 11px; color: #3d3830; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+  .hero-title { font-size: 36px; font-weight: 700; color: #f5c4a0; line-height: 1.1; margin-bottom: 6px; }
+  .hero-sub { font-size: 13px; color: #3d3830; margin-bottom: 40px; letter-spacing: 0.02em; }
+  .block { margin-bottom: 26px; opacity: 0; transition: opacity 0.2s; }
+  .block.visible { opacity: 1; }
+  .cta-section { padding-left: 24px; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+</style>
+
+<script>
+  const CHAR_DELAY = 38, LINE_DELAY = 300, BLOCK_GAP = 480;
+
+	function typeText(el: HTMLElement | null, text: string) {
+  		return new Promise<void>(resolve => {
+    		let i = 0; if (!el) { resolve(); return; }
+    		el.textContent = '';
+    		const t = setInterval(() => { el.textContent += text[i++]; if (i >= text.length) { clearInterval(t); resolve(); } }, CHAR_DELAY);
+  		});
+	}
+  function wait(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+  function showBlock(id: string) { document.getElementById(id)?.classList.add('visible'); }
+  function hideCursor(id: string) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+
+  async function runSequence() {
+    ['b0','b1','b2','b3'].forEach((id: string) => document.getElementById(id)?.classList.remove('visible'));
+	['cmd0','cmd1','cmd2','cmd3'].forEach((id: string) => { const el = document.getElementById(id); if (el) el.textContent = ''; });
+	['out0','out1','out2','out3'].forEach((id: string) => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+	['cur0','cur1','cur2','cur3'].forEach((id: string) => { const el = document.getElementById(id); if (el) el.style.display = 'inline-block'; });
+    
+	await wait(600);
+
+    showBlock('b0');
+    await typeText(document.getElementById('cmd0'), 'whoami');
+    await wait(LINE_DELAY); hideCursor('cur0');
+    const out0 = document.getElementById('out0');
+    for (const html of [
+      'Engineer with <span class="hl">5+ years</span> in automotive, pivoting into <span class="hl">robotics</span> and <span class="hl">embedded controls</span>.',
+      'Grad school + side projects — <span class="hl2">STM32</span>, <span class="hl2">KiCad</span>, <span class="hl2">ROS2</span>, <span class="hl2">Python</span>.',
+      '<span class="dim">Hardware nerd. PCB designer. Firmware tinkerer.</span>'
+    ]) {
+      const p = document.createElement('div'); p.innerHTML = html;
+      p.style.cssText = 'opacity:0;transition:opacity 0.3s;'; out0?.appendChild(p);
+      await wait(20); p.style.opacity = '1'; await wait(240);
+    }
+
+    await wait(BLOCK_GAP);
+    showBlock('b1');
+    await typeText(document.getElementById('cmd1'), 'ls ./skills');
+    await wait(LINE_DELAY); hideCursor('cur1');
+    const tagRow = document.getElementById('out1');
+    for (const tag of ['STM32','KiCad 9','ROS2','Python','PCB design','firmware','I2C / SPI','USB CDC','power systems','JLCPCB']) {
+      const t = document.createElement('span'); t.className = 'tag'; t.textContent = tag;
+      tagRow?.appendChild(t); await wait(10); t.classList.add('in'); await wait(50);
+    }
+
+    await wait(BLOCK_GAP);
+    showBlock('b2');
+    await typeText(document.getElementById('cmd2'), 'cat status.log');
+    await wait(LINE_DELAY); hideCursor('cur2');
+    const out2 = document.getElementById('out2');
+    if (out2) out2.innerHTML = '<div class="status-row"><div class="pulse"></div><span class="status-txt"><span>actively looking</span> · embedded · robotics · controls roles</span></div>';
+
+    await wait(BLOCK_GAP);
+    showBlock('b3');
+    await typeText(document.getElementById('cmd3'), './start');
+    await wait(LINE_DELAY);
+    const out3 = document.getElementById('out3');
+    if (out3) out3.innerHTML = `
+      <a href="/projects" class="btn">→ view_projects</a>
+      <a href="/about" class="btn ghost">→ about_me</a>
+      <a href="/resume" class="btn ghost">→ resume.pdf</a>`;
+  }
+
+  document.addEventListener('DOMContentLoaded', runSequence);
+</script>

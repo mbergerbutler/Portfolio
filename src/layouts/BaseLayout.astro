@@ -1,0 +1,63 @@
+---
+interface Props {
+  title: string;
+  path: string;
+}
+const { title, path } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Max — {title}</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style is:global>
+    @import '../styles/global.css';
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0e0c0b; font-family: 'JetBrains Mono', monospace; }
+    .shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+    .titlebar { flex-shrink: 0; background: #1a1714; padding: 11px 20px; display: flex; align-items: center; border-bottom: 1px solid #2a2520; }
+    .title-left { font-size: 11px; color: #4a4540; letter-spacing: 0.08em; }
+    .title-center { flex: 1; text-align: center; font-size: 11px; color: #3d3830; letter-spacing: 0.04em; }
+    .title-right { display: flex; gap: 12px; align-items: center; }
+    .nav-link { font-size: 11px; color: #3d3830; letter-spacing: 0.06em; text-decoration: none; transition: color 0.15s; }
+    .nav-link:hover { color: #f5c4a0; }
+    .nav-link.active { color: #c49a7a; }
+    .nav-sep { color: #2a2520; font-size: 11px; }
+    .term { flex: 1; overflow-y: auto; padding: 40px 48px 48px; background: #0e0c0b; }
+    .footer-bar { flex-shrink: 0; background: #0a0908; border-top: 1px solid #1a1714; padding: 10px 20px; display: flex; gap: 20px; align-items: center; }
+    .footer-item { font-size: 10px; color: #2a2520; letter-spacing: 0.06em; }
+    .footer-item span { color: #3d3830; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="titlebar">
+      <span class="title-left">max.dev</span>
+      <span class="title-center">embedded systems · robotics · controls</span>
+      <div class="title-right">
+        <a href="/" class={`nav-link ${path === '/' ? 'active' : ''}`}>~/home</a>
+        <span class="nav-sep">/</span>
+        <a href="/projects" class={`nav-link ${path === '/projects' ? 'active' : ''}`}>~/projects</a>
+        <span class="nav-sep">/</span>
+        <a href="/about" class={`nav-link ${path === '/about' ? 'active' : ''}`}>~/about</a>
+        <span class="nav-sep">/</span>
+        <a href="/resume" class={`nav-link ${path === '/resume' ? 'active' : ''}`}>~/resume</a>
+        <span class="nav-sep">/</span>
+        <a href="/contact" class={`nav-link ${path === '/contact' ? 'active' : ''}`}>~/contact</a>
+      </div>
+    </div>
+
+    <div class="term">
+      <slot />
+    </div>
+
+    <div class="footer-bar">
+      <span class="footer-item">status: <span>online</span></span>
+      <span class="footer-item">host: <span>cloudflare pages</span></span>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,184 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map(project => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const p = project.data;
+---
+
+<BaseLayout title={p.title} path="/projects">
+  <div class="breadcrumb">
+    <a href="/">~/home</a> / <a href="/projects">projects</a> / <span>{project.id}</span>
+  </div>
+
+  <div class="proj-title-row">
+    <span class="proj-title">{p.title}</span>
+    <span class={`status-badge ${p.status === 'complete' ? 'status-complete' : 'status-progress'}`}>
+      {p.status}
+    </span>
+  </div>
+  <div class="proj-tagline">{p.tagline}</div>
+
+  <div class="tag-row">
+    {p.tags.map(tag => <span class="tag">{tag}</span>)}
+  </div>
+
+  <hr class="divider">
+
+  <div class="content">
+    <Content />
+  </div>
+
+  {p.hasSim && (
+    <div class="section">
+      <div class="section-header">
+        <span class="ps">~$</span>
+        <span class="section-cmd">./sand_sim</span>
+      </div>
+      <div class="sim-wrap">
+        <div class="sim-info">particles: <span id="simCnt">0</span></div>
+        <canvas id="simCanvas"></canvas>
+        <div class="sim-controls">
+          <button id="simReset">↺ reset</button>
+          <button id="simPause">⏸ pause</button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <hr class="divider">
+  <div class="action-row">
+    <a href={p.github} class="btn">→ github</a>
+    <a href="/projects" class="btn ghost">← back_to_projects</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .content :global(h2) { font-size: 12px; color: #e8a882; margin: 28px 0 14px; letter-spacing: 0.04em; }
+  .content :global(h2::before) { content: '~$ cat '; color: #f5c4a0; font-weight: 700; }
+  .content :global(h3) { font-size: 12px; color: #f5c4a0; margin-bottom: 5px; font-weight: 500; border-left: 2px solid #2a2520; padding-left: 16px; }
+  .content :global(h3:hover) { border-left-color: #f5c4a0; }
+  .content :global(p) { font-size: 13px; color: #7a6e65; line-height: 1.85; margin-bottom: 10px; padding-left: 24px; }
+  .content :global(ul) { padding-left: 24px; list-style: none; margin-bottom: 16px; }
+  .content :global(li) { font-size: 12px; color: #7a6e65; line-height: 1.8; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .content :global(li::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #2a2520; }
+</style>
+
+<script lang="ts">
+  const HIGHT = 31, WIDTH = 17, CELL = 14;
+  const CENTER_I = 15, CENTER_J = 8, DELAY_FRAMES = 4, FPS = 5;
+  const INTERVAL = 1000 / FPS, WALL = 2, SAND = 1, EMPTY = 0;
+
+  const START_GRID = [
+    [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+    [0,0,0,2,2,0,0,0,0,0,0,0,2,2,0,0,0],[0,0,0,0,2,2,0,0,0,0,0,2,2,0,0,0,0],
+    [0,0,0,0,0,2,2,0,0,0,2,2,0,0,0,0,0],[0,0,0,0,0,0,2,2,0,2,2,0,0,0,0,0,0],
+    [0,0,0,0,0,2,2,1,1,1,2,2,0,0,0,0,0],[0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0],
+    [0,0,0,2,2,1,1,1,1,1,1,1,2,2,0,0,0],[0,0,2,2,1,1,1,1,1,1,1,1,1,2,2,0,0],
+    [0,2,2,1,1,1,1,1,1,1,1,1,1,1,2,2,0],[2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2],
+    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],[2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+    [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],[2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],[2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+    [0,2,2,0,0,0,0,0,0,0,0,0,0,0,2,2,0],[0,0,2,2,0,0,0,0,0,0,0,0,0,2,2,0,0],
+    [0,0,0,2,2,2,2,2,2,2,2,2,2,2,0,0,0]
+  ];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const sc = document.getElementById('simCanvas') as HTMLCanvasElement | null;
+    if (!sc) return;
+
+    sc.width = WIDTH * CELL;
+    sc.height = HIGHT * CELL;
+    const sctx = sc.getContext('2d')!;
+    let sgrid: number[][], cwOcc: boolean, cfCount: number;
+
+    function resetSim() { sgrid = START_GRID.map(r => [...r]); cwOcc = false; cfCount = 0; }
+    resetSim();
+
+    function stepSand(g: number[][]) {
+      const moved = Array.from({length: HIGHT}, () => new Uint8Array(WIDTH));
+      for (let i = 1; i < HIGHT; i++) {
+        const order = Array.from({length: WIDTH}, (_, k) => k).sort(() => Math.random() - 0.5);
+        for (const j of order) {
+          if (g[i][j] !== SAND || moved[i][j]) continue;
+          if (i === CENTER_I && j === CENTER_J) {
+            if (!cwOcc) { cwOcc = true; cfCount = 0; continue; }
+            cfCount++; if (cfCount < DELAY_FRAMES) continue; cfCount = 0; cwOcc = false;
+          }
+          const ni = i - 1;
+          if (g[ni][j] === EMPTY) { g[ni][j] = SAND; g[i][j] = EMPTY; moved[ni][j] = 1; continue; }
+          const dirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
+          for (const dj of dirs) {
+            const nj = j + dj;
+            if (nj >= 0 && nj < WIDTH && g[ni][nj] === EMPTY) { g[ni][nj] = SAND; g[i][j] = EMPTY; moved[ni][nj] = 1; break; }
+          }
+        }
+      }
+      if (g[CENTER_I][CENTER_J] === EMPTY) cwOcc = false;
+    }
+
+    function countSand(g: number[][]) {
+      let n = 0;
+      for (let i = 0; i < HIGHT; i++) for (let j = 0; j < WIDTH; j++) if (g[i][j] === SAND) n++;
+      return n;
+    }
+
+    function drawSim(g: number[][]) {
+      sctx.fillStyle = '#0e0c0b';
+      sctx.fillRect(0, 0, sc!.width, sc!.height);
+      sctx.font = `bold ${CELL}px "JetBrains Mono", monospace`;
+      for (let i = 0; i < HIGHT; i++) {
+        for (let j = 0; j < WIDTH; j++) {
+          const v = g[i][j];
+          if (v === EMPTY) continue;
+          const x = j * CELL, y = (HIGHT - 1 - i) * CELL + CELL - 2;
+          if (v === WALL) { sctx.fillStyle = '#7a5a40'; sctx.fillText('#', x, y); }
+          else if (v === SAND) { sctx.fillStyle = '#f5c4a0'; sctx.fillText('*', x, y); }
+        }
+      }
+    }
+
+    let simPaused = false, simLast = 0;
+    function simLoop(ts: number) {
+      requestAnimationFrame(simLoop);
+      if (simPaused) return;
+      if (ts - simLast < INTERVAL) return;
+      simLast = ts;
+      stepSand(sgrid);
+      drawSim(sgrid);
+      const cnt = document.getElementById('simCnt');
+      if (cnt) cnt.textContent = String(countSand(sgrid));
+    }
+
+    document.getElementById('simReset')?.addEventListener('click', () => {
+      resetSim(); drawSim(sgrid);
+      const cnt = document.getElementById('simCnt');
+      if (cnt) cnt.textContent = String(countSand(sgrid));
+    });
+
+    document.getElementById('simPause')?.addEventListener('click', function() {
+      simPaused = !simPaused;
+      (this as HTMLButtonElement).textContent = simPaused ? '▶ resume' : '⏸ pause';
+    });
+
+    document.fonts.load(`bold ${CELL}px "JetBrains Mono"`).then(() => {
+      drawSim(sgrid); requestAnimationFrame(simLoop);
+    }).catch(() => {
+      drawSim(sgrid); requestAnimationFrame(simLoop);
+    });
+  });
+</script>

@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const projects = await getCollection('projects');
+---
+
+<BaseLayout title="Projects" path="/projects">
+  <div class="breadcrumb"><a href="/">~/home</a> / <span>projects</span></div>
+  <div class="page-cmd">
+    <span class="ps">~$</span>
+    <span class="cmd-label">ls -l ./projects</span>
+    <span class="result-count">{projects.length} entries</span>
+  </div>
+  <hr class="divider">
+  <div class="project-list" id="projectList">
+    {projects.map((project, i) => (
+      <div class="project-row" id={`p${i}`}>
+        <div class="project-header" data-index={i}>
+          <span class="proj-arrow">▶</span>
+          <span class="proj-index">{String(i + 1).padStart(2, '0')}</span>
+          <span class="proj-name">{project.data.title}</span>
+          <span class={`proj-status ${project.data.status === 'complete' ? 'status-complete' : 'status-progress'}`}>
+            {project.data.status}
+          </span>
+          <span class="proj-date">{project.data.date}</span>
+        </div>
+        <div class="project-detail">
+          <div class="detail-desc">{project.data.tagline}</div>
+          <div class="detail-label">stack</div>
+          <div class="tag-row">
+            {project.data.tags.map(tag => (
+              <span class="tag">{tag}</span>
+            ))}
+          </div>
+          <div class="detail-actions">
+            <a href={`/projects/${project.slug}`} class="detail-btn">→ view_project</a>
+            <a href={project.data.github} class="detail-btn ghost">→ github</a>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .page-cmd { display: flex; align-items: baseline; gap: 10px; }
+  .cmd-label { color: #e8a882; font-size: 13px; }
+  .result-count { font-size: 11px; color: #3d3830; margin-left: auto; letter-spacing: 0.04em; }
+</style>
+
+<script>
+  document.querySelectorAll('.project-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const index = header.getAttribute('data-index');
+      const row = document.getElementById('p' + index);
+      const isOpen = row?.classList.contains('open');
+      document.querySelectorAll('.project-row').forEach(r => r.classList.remove('open'));
+      if (!isOpen) row?.classList.add('open');
+    });
+  });
+</script>
