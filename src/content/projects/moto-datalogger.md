@@ -1,7 +1,7 @@
 ---
 title: moto-datalogger
-status: complete
-date: "2024"
+status: in progress
+date: "2025 -"
 tagline: "Onboard IMU and GNSS data logger for a motorcycle. UART · SD card · embedded C · compact form factor."
 tags:
   - embedded C

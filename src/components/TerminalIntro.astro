@@ -1,0 +1,105 @@
+---
+interface Command {
+  cmd: string;
+  output: string;
+  type?: 'text' | 'tags' | 'status' | 'cta';
+}
+
+interface Props {
+  commands: Command[];
+}
+
+const { commands } = Astro.props;
+---
+
+<div id="terminalIntro">
+  {commands.map((_, i) => (
+    <div class="block" id={`b${i}`}>
+      <div class="prompt-line">
+        <span class="ps">~$</span>
+        <span class="cmd-text" id={`cmd${i}`}></span>
+        <span class="cursor" id={`cur${i}`}></span>
+      </div>
+      <div class="output" id={`out${i}`}></div>
+    </div>
+  ))}
+</div>
+
+<script define:vars={{ commands }}>
+  const CHAR_DELAY = 38, LINE_DELAY = 300, BLOCK_GAP = 480;
+
+  function typeText(el, text) {
+    return new Promise(resolve => {
+      let i = 0; if (!el) { resolve(); return; }
+      el.textContent = '';
+      const t = setInterval(() => {
+        el.textContent += text[i++];
+        if (i >= text.length) { clearInterval(t); resolve(); }
+      }, CHAR_DELAY);
+    });
+  }
+
+  function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function showBlock(id) { document.getElementById(id)?.classList.add('visible'); }
+  function hideCursor(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+
+  async function runSequence() {
+    commands.forEach((_, i) => {
+      document.getElementById(`b${i}`)?.classList.remove('visible');
+      const cmd = document.getElementById(`cmd${i}`); if (cmd) cmd.textContent = '';
+      const out = document.getElementById(`out${i}`); if (out) out.innerHTML = '';
+      const cur = document.getElementById(`cur${i}`); if (cur) cur.style.display = 'inline-block';
+    });
+
+    await wait(600);
+
+    for (let i = 0; i < commands.length; i++) {
+      const { cmd, output, type } = commands[i];
+      showBlock(`b${i}`);
+      await typeText(document.getElementById(`cmd${i}`), cmd);
+      await wait(LINE_DELAY);
+      hideCursor(`cur${i}`);
+
+      const outEl = document.getElementById(`out${i}`);
+      if (!outEl) { await wait(BLOCK_GAP); continue; }
+
+      if (type === 'tags') {
+        const tags = JSON.parse(output);
+        outEl.className = 'tag-row';
+        for (const tag of tags) {
+          const t = document.createElement('span');
+          t.className = 'tag'; t.textContent = tag;
+          outEl.appendChild(t); await wait(10);
+          t.classList.add('in'); await wait(50);
+        }
+      } else if (type === 'status') {
+        outEl.innerHTML = `<div class="status-row"><div class="pulse"></div><span class="status-txt"><span>${output}</span></span></div>`;
+      } else if (type === 'cta') {
+        const links = JSON.parse(output);
+        outEl.className = 'cta-section';
+        outEl.innerHTML = links.map(l =>
+          `<a href="${l.href}" class="btn ${l.ghost ? 'ghost' : ''}">→ ${l.label}</a>`
+        ).join('');
+      } else {
+        const lines = Array.isArray(JSON.parse(output)) ? JSON.parse(output) : [output];
+        for (const html of lines) {
+          const p = document.createElement('div'); p.innerHTML = html;
+          p.style.cssText = 'opacity:0;transition:opacity 0.3s;';
+          outEl.appendChild(p); await wait(20);
+          p.style.opacity = '1'; await wait(240);
+        }
+      }
+
+      await wait(BLOCK_GAP);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', runSequence);
+</script>
+
+<style>
+  .block { margin-bottom: 26px; opacity: 0; transition: opacity 0.2s; }
+  .block.visible { opacity: 1; }
+  .tag-row { padding-left: 24px; }
+  .cta-section { padding-left: 24px; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+</style>

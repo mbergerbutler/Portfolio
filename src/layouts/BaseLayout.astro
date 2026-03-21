@@ -34,10 +34,20 @@ const { title, path } = Astro.props;
 </head>
 <body>
   <div class="shell">
+    <!-- 
     <div class="titlebar">
-      <span class="title-left">max.dev</span>
+      <span class="title-left">maxmakes.dev</span>
       <span class="title-center">embedded systems · robotics · controls</span>
-      <div class="title-right">
+    </div>
+     -->
+
+    <div class="term">
+      <slot />
+    </div>
+
+    <div class="footer-bar">
+      <span class="footer-item">status: <span>online</span></span>
+      <div class="footer-item">
         <a href="/" class={`nav-link ${path === '/' ? 'active' : ''}`}>~/home</a>
         <span class="nav-sep">/</span>
         <a href="/projects" class={`nav-link ${path === '/projects' ? 'active' : ''}`}>~/projects</a>
@@ -48,15 +58,6 @@ const { title, path } = Astro.props;
         <span class="nav-sep">/</span>
         <a href="/contact" class={`nav-link ${path === '/contact' ? 'active' : ''}`}>~/contact</a>
       </div>
-    </div>
-
-    <div class="term">
-      <slot />
-    </div>
-
-    <div class="footer-bar">
-      <span class="footer-item">status: <span>online</span></span>
-      <span class="footer-item">host: <span>cloudflare pages</span></span>
     </div>
   </div>
 </body>

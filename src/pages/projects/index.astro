@@ -1,18 +1,22 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TerminalIntro from '../../components/TerminalIntro.astro';
 import { getCollection } from 'astro:content';
 
 const projects = await getCollection('projects');
+
+const commands = [
+  {
+    cmd: 'ls -l ./projects',
+    type: 'text',
+    output: JSON.stringify([`${projects.length} entries found`])
+  }
+];
 ---
 
 <BaseLayout title="Projects" path="/projects">
   <div class="breadcrumb"><a href="/">~/home</a> / <span>projects</span></div>
-  <div class="page-cmd">
-    <span class="ps">~$</span>
-    <span class="cmd-label">ls -l ./projects</span>
-    <span class="result-count">{projects.length} entries</span>
-  </div>
-  <hr class="divider">
+  <TerminalIntro commands={commands} />
   <div class="project-list" id="projectList">
     {projects.map((project, i) => (
       <div class="project-row" id={`p${i}`}>
@@ -47,6 +51,8 @@ const projects = await getCollection('projects');
   .page-cmd { display: flex; align-items: baseline; gap: 10px; }
   .cmd-label { color: #e8a882; font-size: 13px; }
   .result-count { font-size: 11px; color: #3d3830; margin-left: auto; letter-spacing: 0.04em; }
+  #projectList { opacity: 0; transition: opacity 0.4s; }
+  #projectList.visible { opacity: 1; }
 </style>
 
 <script>
@@ -58,5 +64,11 @@ const projects = await getCollection('projects');
       document.querySelectorAll('.project-row').forEach(r => r.classList.remove('open'));
       if (!isOpen) row?.classList.add('open');
     });
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      document.getElementById('projectList')?.classList.add('visible');
+    }, 1200);
   });
 </script>
