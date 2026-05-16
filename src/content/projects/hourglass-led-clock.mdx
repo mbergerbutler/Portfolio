@@ -18,11 +18,22 @@ github: "#"
 hasSim: true
 ---
 
+import { Image } from 'astro:assets';
+import led_display_front from '../../assets/SandsOfTime/display_front.png';
+import led_display_back from '../../assets/SandsOfTime/display_back.png';
+
 ## overview
 
 The hourglass clock reimagines a centuries-old timekeeping metaphor using a sand particle simulation running on a microcontroller. Two circular LED matrices sit at the top and bottom of an hourglass form — sand pixels fall from the upper matrix to the lower one, and the rate of fall tracks real time.
 
 The whole thing runs on a single custom PCB — my first PCB design — built around the STM32U073 for its low power profile and native USB support. It charges over USB-C, runs for hours on battery, and wakes from sleep when you pick it up.
+
+## Gallary
+
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+  <Image src={led_display_front} alt="LED display PCB front" style="width: 100%; height: auto;" />
+  <Image src={led_display_back} alt="LED display PCB back" style="width: 100%; height: auto;" />
+</div>
 
 ## challenges
 
@@ -40,8 +51,11 @@ This is my first custom PCB. Every decision — layer stackup, component placeme
 
 ## build status
 
-- done: sand simulation firmware complete
+- done: sand simulation concept code complete
 - done: schematic complete
-- active: PCB layout — in progress
-- todo: fabrication & assembly
-- todo: hardware bring-up & testing
+- done: LED PCB layout complete
+- active: Order LED display - in progress
+- todo: Test and finalize firmware
+- todo: Design LED driver PCB
+- todo: Order LED driver PCB
+- todo: Tedst final assembly
