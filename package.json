@@ -13,6 +13,7 @@
     "generate-types": "wrangler types"
   },
   "dependencies": {
+    "@astrojs/mdx": "^5.0.6",
     "astro": "^6.0.8",
     "wrangler": "^4.76.0"
   }
